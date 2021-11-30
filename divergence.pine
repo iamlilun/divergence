@@ -54,7 +54,7 @@ var hid_div_l_style = hid_div_l_style_ == 'Solid' ? line.style_solid : hid_div_l
 rsi = ta.rsi(close, 14)  // RSI 相對強弱指標
 [macd, signal, deltamacd] = ta.macd(close, 12, 26, 9)  // MACD 平滑異同移動平均線
 moment = ta.mom(close, 10)  // Momentum 動能指標
-cci = ta.cci(close, 10)  // CCI 順勢指標
+cci = ta.cci(close, 34)  // CCI 順勢指標
 Obv = ta.obv  // OBV 人氣指標
 stk = ta.sma(ta.stoch(close, high, low, 14), 3)  // Stoch 隨機指標均線
 
