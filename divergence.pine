@@ -54,7 +54,7 @@ var hid_div_l_style = hid_div_l_style_ == 'Solid' ? line.style_solid : hid_div_l
 rsi = ta.rsi(close, 14)  // RSI 相對強弱指標
 [macd, signal, deltamacd] = ta.macd(close, 12, 26, 9)  // MACD 平滑異同移動平均線
 moment = ta.mom(close, 10)  // Momentum 動能指標
-cci = ta.cci(close, 34)  // CCI 順勢指標
+cci = ta.cci(close, 10)  // CCI 順勢指標
 Obv = ta.obv  // OBV 人氣指標
 stk = ta.sma(ta.stoch(close, high, low, 14), 3)  // Stoch 隨機指標均線
 
@@ -93,7 +93,6 @@ if barstate.isfirst
     array.set(div_colors, 3, neg_hid_div_col)
 
 // Check if we get new Pivot High Or Pivot Low
-///@Q: 樞軸是做啥用的?
 float ph = ta.pivothigh(source == 'Close' ? close : high, prd, prd) //pivot high
 float pl = ta.pivotlow(source == 'Close' ? close : low, prd, prd) //pivot low
 
@@ -147,6 +146,7 @@ positive_regular_positive_hidden_divergence(src, cond) =>
 
     prsc = source == 'Close' ? close : low
 
+    //確定收盤後才做判斷
     if barstate.isconfirmed
         // if indicators higher than last value and close price is higher than las close 
         // 不等待最後一筆資料 或 指標值高於前一筆 或 收盤價高於前一筆
@@ -155,7 +155,7 @@ positive_regular_positive_hidden_divergence(src, cond) =>
             // we search last 15 PPs
             //maxpp default = 10
             for x = 0 to maxpp - 1 by 1
-                //計算當前的判斷長度(也是判斷點的index) = bar_index - 第x筆的樞軸低點index + 樞軸值(預設5)
+                //計算當前的判斷長度(也是判斷點的index) = bar_index - 第x筆的樞軸低點index + 樞軸強度(預設5)
                 len = bar_index - array.get(pl_positions, x) + prd
 
                 // if we reach non valued array element or arrived 101. or previous bars then we don't search more
@@ -216,12 +216,12 @@ negative_regular_negative_hidden_divergence(src, cond) =>
 
     if barstate.isconfirmed
         // if indicators higher than last value and close price is higher than las close 
-        // 不等待最後一筆資料 或 指標值低於前一筆 或 收盤價低於前一筆
+        // 指標值低於前一筆 或 收盤價低於前一筆
         if dontconfirm or src < src[1] or close < close[1]
             startpoint = dontconfirm ? 0 : 1  // don't check last candle
             // we search last 15 PPs
             for x = 0 to maxpp - 1 by 1
-                //計算當前的判斷長度(也是判斷點的index) = bar_index - 第x筆的樞軸高點index + 樞軸值(預設5)
+                //計算當前的判斷長度(也是判斷點的index) = bar_index - 第x筆的樞軸高點index + 樞軸強度(預設5)
                 len = bar_index - array.get(ph_positions, x) + prd
 
                 // if we reach non valued array element or arrived 101. or previous bars then we don't search more
@@ -269,7 +269,6 @@ negative_regular_negative_hidden_divergence(src, cond) =>
                         divlen := len
                         break
     divlen
-
 ///
 /// calculate 4 types of divergence if enabled in the options and return divergences in an array
 /// 判斷4種背離狀態並把bar_index存進array
@@ -281,7 +280,7 @@ calculate_divs(cond, indicator_1) =>
     array.set(divs, 2, cond and (searchdiv == 'Hidden' or searchdiv == 'Regular/Hidden') ? positive_regular_positive_hidden_divergence(indicator_1, 2) : 0)
     array.set(divs, 3, cond and (searchdiv == 'Hidden' or searchdiv == 'Regular/Hidden') ? negative_regular_negative_hidden_divergence(indicator_1, 2) : 0)
     divs
-
+    
 // array to keep all divergences
 var all_divergences = array.new_int(44)  // 11 indicators * 4 divergence = 44 elements
 
@@ -514,13 +513,16 @@ for x = 0 to 10 by 1
 
 // draw labels
 if showindis != 'Don\'t Show' or shownum
+    //如果要顯示指標數量..就把數量塞在最後
     if shownum and dnumdiv_top > 0
         divergence_text_top += str.tostring(dnumdiv_top)
-        
+
     if shownum and dnumdiv_bottom > 0
         divergence_text_bottom += str.tostring(dnumdiv_bottom)
-       
+
+    //文字有資料就塞在label裡顯示出來
     if divergence_text_top != ''
+        //如果設定只顯示最後一筆..把過去的label全都清掉
         if showlast
             delete_old_neg_div_labels()
         array.push(neg_div_labels, label.new(x=bar_index, y=math.max(high, high[1]), text=divergence_text_top, color=top_label_col, textcolor=neg_div_text_col, style=label.style_label_down))
@@ -533,8 +535,8 @@ if showindis != 'Don\'t Show' or shownum
 // 2個以上穩合的指標再通知
 alertcondition(pos_reg_div_detected and dnumdiv_bottom > 1, title='Positive Regular Divergence Detected', message='Positive Regular Divergence Detected')
 alertcondition(neg_reg_div_detected and dnumdiv_top > 1, title='Negative Regular Divergence Detected', message='Negative Regular Divergence Detected')
-// alertcondition(pos_hid_div_detected and dnumdiv_bottom > 1, title='Positive Hidden Divergence Detected', message='Positive Hidden Divergence Detected')
-// alertcondition(neg_hid_div_detected and dnumdiv_top > 1, title='Negative Hidden Divergence Detected', message='Negative Hidden Divergence Detected')
+alertcondition(pos_hid_div_detected and dnumdiv_bottom > 1, title='Positive Hidden Divergence Detected', message='Positive Hidden Divergence Detected')
+alertcondition(neg_hid_div_detected and dnumdiv_top > 1, title='Negative Hidden Divergence Detected', message='Negative Hidden Divergence Detected')
 
 
 // 上面已經會個別傳送了
