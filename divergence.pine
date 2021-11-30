@@ -1,5 +1,5 @@
 //@version=5
-indicator('Divergence-改', overlay=true, max_bars_back=1000, max_lines_count=500, max_labels_count=500)
+strategy('Divergence-改', overlay=true, max_bars_back=1000, max_lines_count=500, max_labels_count=500)
 
 ///定義可從設定更改的值
 prd = input.int(defval=5, title='Pivot Period', minval=1, maxval=50)
@@ -530,9 +530,21 @@ if showindis != 'Don\'t Show' or shownum
             delete_old_pos_div_labels()
         array.push(pos_div_labels, label.new(x=bar_index, y=math.min(low, low[1]), text=divergence_text_bottom, color=bottom_label_col, textcolor=pos_div_text_col, style=label.style_label_up))
 
+
+///---------------------------
+/// 進出場
+///---------------------------
+strategy.entry("enter long", strategy.long, qty = 1, when = pos_reg_div_detected and dnumdiv_bottom > 1, comment="多單")
+strategy.entry("enter short", strategy.short, qty = 1, when = neg_reg_div_detected and dnumdiv_top > 1, comment="空單")
+
+
+strategy.close("enter long", qty = 1, when = neg_reg_div_detected and dnumdiv_top > 1, comment="多單出場")
+strategy.close("enter short", qty = 1, when = pos_reg_div_detected and dnumdiv_bottom > 1, comment="空單出場")
+
 // 2個以上穩合的指標再通知
-alertcondition(pos_reg_div_detected and dnumdiv_bottom > 1, title='Positive Regular Divergence Detected', message='Positive Regular Divergence Detected')
-alertcondition(neg_reg_div_detected and dnumdiv_top > 1, title='Negative Regular Divergence Detected', message='Negative Regular Divergence Detected')
+
+// alertcondition(pos_reg_div_detected and dnumdiv_bottom > 1, title='Positive Regular Divergence Detected', message='Positive Regular Divergence Detected')
+// alertcondition(neg_reg_div_detected and dnumdiv_top > 1, title='Negative Regular Divergence Detected', message='Negative Regular Divergence Detected')
 // alertcondition(pos_hid_div_detected and dnumdiv_bottom > 1, title='Positive Hidden Divergence Detected', message='Positive Hidden Divergence Detected')
 // alertcondition(neg_hid_div_detected and dnumdiv_top > 1, title='Negative Hidden Divergence Detected', message='Negative Hidden Divergence Detected')
 
