@@ -508,8 +508,6 @@ for x = 0 to 10 by 1
         //看漲背離顯示在下面
         divergence_text_bottom += (div_type % 2 == 0 ? showindis != 'Don\'t Show' ? array.get(indicators_name, x) + '\n' : '' : '')
         
-        
-
 
 // draw labels
 if showindis != 'Don\'t Show' or shownum
@@ -532,12 +530,20 @@ if showindis != 'Don\'t Show' or shownum
             delete_old_pos_div_labels()
         array.push(pos_div_labels, label.new(x=bar_index, y=math.min(low, low[1]), text=divergence_text_bottom, color=bottom_label_col, textcolor=pos_div_text_col, style=label.style_label_up))
 
-// 2個以上穩合的指標再通知
-alertcondition(dnumdiv_bottom > 1, title='多單進場', message='{"side":1,"symbol":"BTC-USDT"}')
-alertcondition(dnumdiv_bottom > 1, title='空單出場', message='{"side":2,"symbol":"BTC-USDT"}')
 
-alertcondition(dnumdiv_top > 1, title='空單進場', message='{"side":2,"symbol":"BTC-USDT"}')
-alertcondition(dnumdiv_top > 1, title='多單出場', message='{"side":1,"symbol":"BTC-USDT"}')
+// 當前手上有的單 1=>多單, 2=>空單
+var side = 0
+
+// 2個以上穩合的指標再通知
+if dnumdiv_bottom > 1
+    alertcondition(side != 1, title='多單進場', message='{"side":1,"symbol":"BTC-USDT","action":"open"}')
+    alertcondition(side == 2, title='空單出場', message='{"side":2,"symbol":"BTC-USDT","action":"close"}')
+    side := 1
+
+if dnumdiv_top > 1
+    alertcondition(side != 2, title='空單進場', message='{"side":2,"symbol":"BTC-USDT","action":"open"}')
+    alertcondition(side == 1, title='多單出場', message='{"side":1,"symbol":"BTC-USDT","action":"close"}')
+    side := 2
 
 // 上面已經會個別傳送了
 // alertcondition(pos_reg_div_detected or pos_hid_div_detected, title='Positive Divergence Detected', message='Positive Divergence Detected')
